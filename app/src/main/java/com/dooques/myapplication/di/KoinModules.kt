@@ -1,48 +1,42 @@
 package com.dooques.myapplication.di
 
-import com.dooques.myapplication.data.network.FakeDataApiService
-import com.dooques.myapplication.data.network.FakeDataNetworkRepository
-import com.dooques.myapplication.data.network.FakeDataRepository
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
+import com.dooques.myapplication.data.datastore.UserDatastoreRepository
+import com.dooques.myapplication.data.datastore.UserDsRepository
+import com.dooques.myapplication.data.network.FakeStoreNetworkRepository
+import com.dooques.myapplication.data.network.FakeStoreApiProvider
+import com.dooques.myapplication.data.network.FakeStoreRepository
+import com.dooques.myapplication.data.network.FakeStoreDataSource
+import com.dooques.myapplication.ui.screens.account.AccountViewModel
 import com.dooques.myapplication.ui.screens.home.HomeViewModel
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+import com.dooques.myapplication.ui.screens.item.ItemViewModel
+import com.dooques.myapplication.ui.screens.selling.CreateListingViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
-import retrofit2.Retrofit
 
-
-private const val BASE_URL = "https://fakestoreapi.com/"
-
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
-
-    private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .build()
-
-fun provideRetrofit(): Retrofit =
-    Retrofit.Builder()
-        .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
-        .baseUrl(BASE_URL)
-        .client(okHttpClient)
-        .build()
-
-fun provideFakeDataService(retrofit: Retrofit): FakeDataApiService =
-    retrofit.create(FakeDataApiService::class.java)
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+private val fakeStoreService = FakeStoreApiProvider()
+private fun provideRetrofit() = fakeStoreService.provideRetrofit()
+private fun provideFakeStoreDataService() = fakeStoreService.provideFakeStoreDataService(provideRetrofit())
 
 val networkModule = module {
     factory { provideRetrofit() }
-    single { provideFakeDataService(get()) }
+    single { provideFakeStoreDataService() }
+    single<FakeStoreDataSource> { FakeStoreDataSource(get()) }
 }
 
 val repositoryModule = module {
-    single<FakeDataRepository> { FakeDataNetworkRepository(get()) }
+    single<FakeStoreRepository> { FakeStoreNetworkRepository(get()) }
+    single<UserDsRepository> { UserDatastoreRepository(androidContext().dataStore) }
 }
 
 val viewModelModule = module {
     viewModel { HomeViewModel(get()) }
+    viewModel { ItemViewModel(get()) }
+    viewModel { CreateListingViewModel(get()) }
+    viewModel { AccountViewModel(get(), get()) }
 }

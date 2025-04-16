@@ -5,4 +5,15 @@
     <string name="search">Search</string>
     <string name="account">Account</string>
     <string name="inbox">Inbox</string>
+    <string name="selling">Selling</string>
+    <string name="label_10_cut">The marketplace takes a 10% cut of any items sold on the platform</string>
+    <string name="my_account">My Account</string>
+    <string name="profile_picture">profile picture</string>
+    <string name="favorites">Favorites</string>
+    <string name="take_another_look_at_your_favourite_items">Take another look at your favourite items</string>
+    <string name="purchases">Purchases</string>
+    <string name="have_a_look_at_your_recent_purchases">Have a look at your recent purchases</string>
+    <string name="offers">Offers</string>
+    <string name="your_offer_history">Your offer history</string>
+    <string name="selling_since_2025">Selling since 2025</string>
 </resources>

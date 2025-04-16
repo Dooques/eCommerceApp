@@ -4,7 +4,7 @@ import java.util.UUID
 
 data class ImageGalleryItem(
     val imageId: String = UUID.randomUUID().toString(),
-    val title: String,
+    val title: String = "",
     var selected: Boolean = false,
-    val image: Int,
+    val image: String = "",
 )

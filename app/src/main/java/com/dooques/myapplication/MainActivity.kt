@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.dooques.myapplication.ui.screens.navGraph.NavGraph
+import com.dooques.myapplication.ui.navMap.NavGraph
 import com.dooques.myapplication.ui.theme.ECommerceAppTheme
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.core.annotation.KoinExperimentalAPI

@@ -1,33 +1,46 @@
 package com.dooques.myapplication.ui.screens.home
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dooques.myapplication.data.network.FakeDataRepository
-import com.dooques.myapplication.model.ProductListUiState
+import com.dooques.myapplication.data.network.FakeStoreRepository
+import com.dooques.myapplication.model.Product
+import com.dooques.myapplication.util.HOME_VM_TAG
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 class HomeViewModel(
-    private val fakeDataApiRepository: FakeDataRepository
+    private val fakeStoreDatRepository: FakeStoreRepository
 ): ViewModel() {
 
-    var productListUiState: ProductListUiState by mutableStateOf(ProductListUiState.Loading)
-        private set
+    private val _productListNetworkState =
+        MutableStateFlow<ProductListNetworkState>(ProductListNetworkState.Success(emptyList()))
+
+    val productListNetworkState: StateFlow<ProductListNetworkState> = _productListNetworkState
 
     init {
+        Log.d(HOME_VM_TAG, "\nGetting product data from network...")
         getFakeData()
+        Log.d(HOME_VM_TAG, "Product data loaded.")
     }
+
     private fun getFakeData() {
+        Log.d(HOME_VM_TAG, "Returning data from ViewModel...")
         viewModelScope.launch {
-             productListUiState = try {
-                val productList = fakeDataApiRepository.getProductList()
-                ProductListUiState.Success(productList)
-            } catch (e: IOException) {
-                ProductListUiState.Error(e)
+            try {
+            fakeStoreDatRepository.productList
+                .collect { _productListNetworkState.value = ProductListNetworkState.Success(it) }
+            Log.d(HOME_VM_TAG, "Data Collected: " +
+                    "${(productListNetworkState.value as ProductListNetworkState.Success).products}")
+            } catch (e: Exception) {
+                _productListNetworkState.value = ProductListNetworkState.Error(e)
             }
         }
     }
+}
+
+sealed interface ProductListNetworkState {
+    data class Success(val products: List<Product>): ProductListNetworkState
+    data class Error(val e: Exception): ProductListNetworkState
 }
