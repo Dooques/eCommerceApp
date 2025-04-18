@@ -1,6 +1,8 @@
 package com.dooques.myapplication.data.network
 
+import com.dooques.myapplication.model.AuthToken
 import com.dooques.myapplication.model.Product
+import com.dooques.myapplication.model.UserLoginAuth
 import com.dooques.myapplication.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -12,6 +14,7 @@ interface FakeStoreRepository {
     suspend fun getUserProfiles(): List<UserProfile>
     suspend fun getUserProfile(id: Int): UserProfile
     suspend fun postUserProfile(userProfile: UserProfile)
+    suspend fun loginUser(userLoginAuth: UserLoginAuth): AuthToken
 }
 
 class FakeStoreNetworkRepository(
@@ -29,7 +32,6 @@ class FakeStoreNetworkRepository(
     override suspend fun postProductDetails(product: Product) =
         fakeStoreDataSource.postProductDetails(product)
 
-
     /* User Profiles */
     override suspend fun getUserProfiles(): List<UserProfile> =
         fakeStoreDataSource.getUserProfiles()
@@ -38,5 +40,8 @@ class FakeStoreNetworkRepository(
         fakeStoreDataSource.getUserProfile(id)
 
     override suspend fun postUserProfile(userProfile: UserProfile) =
-        fakeStoreDataSource.postUserProfile(userProfile)
+        fakeStoreDataSource.createUserProfile(userProfile)
+
+    override suspend fun loginUser(userLoginAuth: UserLoginAuth) =
+        fakeStoreDataSource.loginUser(userLoginAuth)
 }

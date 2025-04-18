@@ -1,18 +1,23 @@
 package com.dooques.myapplication.ui.screens.item
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dooques.myapplication.data.network.FakeStoreRepository
+import com.dooques.myapplication.data.offline.OfflineRepository
 import com.dooques.myapplication.model.Product
 import com.dooques.myapplication.util.ITEM_VM_TAG
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class ItemViewModel(private val fakeStoreDataRepository: FakeStoreRepository): ViewModel() {
+class ItemViewModel(
+    private val fakeStoreDataRepository: FakeStoreRepository,
+    private val offlineRepository: OfflineRepository
+): ViewModel() {
 
-    private val _productState = MutableStateFlow<ProductNetworkState>(ProductNetworkState.Success(Product()))
+    private val _productState = MutableStateFlow<ProductNetworkState>(ProductNetworkState.Loading)
     val productState: StateFlow<ProductNetworkState> = _productState
 
     fun getProduct(id: Int) {
@@ -28,6 +33,9 @@ class ItemViewModel(private val fakeStoreDataRepository: FakeStoreRepository): V
 
     }
 
+    fun getProductFromJSON(context: Context, id: Int) =
+        offlineRepository.returnProducts(context).first {it.id == id}
+
     fun clearProductState() {
         _productState.value = ProductNetworkState.Success(Product())
     }
@@ -36,4 +44,5 @@ class ItemViewModel(private val fakeStoreDataRepository: FakeStoreRepository): V
 sealed interface ProductNetworkState {
     data class Success(val product: Product): ProductNetworkState
     data class Error(val e: Exception): ProductNetworkState
+    object Loading: ProductNetworkState
 }

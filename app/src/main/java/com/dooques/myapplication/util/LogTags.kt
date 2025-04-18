@@ -18,3 +18,6 @@ const val SELLING_VM_TAG = "SellingViewModel"
 /* Account */
 const val ACCOUNT_SCREEN_TAG = "AccountScreen"
 const val ACCOUNT_VM_TAG = "AccountViewModel"
+
+/* Util */
+const val JSON_TAG = "JSONReader"

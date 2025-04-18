@@ -1,9 +1,11 @@
 package com.dooques.myapplication.ui.screens.home
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dooques.myapplication.data.network.FakeStoreRepository
+import com.dooques.myapplication.data.offline.OfflineRepository
 import com.dooques.myapplication.model.Product
 import com.dooques.myapplication.util.HOME_VM_TAG
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val fakeStoreDatRepository: FakeStoreRepository
+    private val fakeStoreDatRepository: FakeStoreRepository,
+    private val offlineRepository: OfflineRepository
 ): ViewModel() {
 
     private val _productListNetworkState =
@@ -38,9 +41,12 @@ class HomeViewModel(
             }
         }
     }
+
+    fun getProductsFromJSON(context: Context) = offlineRepository.returnProducts(context)
 }
 
 sealed interface ProductListNetworkState {
     data class Success(val products: List<Product>): ProductListNetworkState
     data class Error(val e: Exception): ProductListNetworkState
+    object Loading: ProductListNetworkState
 }

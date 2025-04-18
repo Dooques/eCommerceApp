@@ -2,10 +2,8 @@ package com.dooques.myapplication.ui.screens.item
 
 import android.icu.text.DecimalFormat
 import android.util.Log
-import android.view.Window
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -51,30 +48,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.dooques.myapplication.R
-import com.dooques.myapplication.model.ImageGalleryItem
 import com.dooques.myapplication.model.Product
 import com.dooques.myapplication.ui.reusableComponents.NavigationIconButton
-import com.dooques.myapplication.ui.reusableComponents.UiError
 import com.dooques.myapplication.ui.screens.home.ProductListNetworkState
+import com.dooques.myapplication.ui.screens.item.offlineMode.ProductDisplayOffline
+import com.dooques.myapplication.ui.screens.item.offlineMode.ProductDisplayOnline
+import com.dooques.myapplication.ui.screens.item.offlineMode.refreshLogic
 import com.dooques.myapplication.util.ITEM_SCREEN_TAG
-import com.dooques.myapplication.util.ImageGalleryUiState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemScreen(
+    offlineMode: Boolean,
     productUiState: ProductNetworkState,
     productListUiState: ProductListNetworkState,
+    offlineProduct: Product,
+    offlineProducts: List<Product>,
     onProductClick: (Product) -> Unit,
     getProduct: (Int) -> Unit,
+    getOfflineProduct: (Int) -> Unit,
     navigateUp: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -82,23 +79,23 @@ fun ItemScreen(
 
     val state = rememberPullToRefreshState()
     val scope = rememberCoroutineScope()
-    var isRefreshing by remember { mutableStateOf<Boolean>(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var onRefresh = {
-        isRefreshing = true
-        scope.launch {
-            delay(1_000L)
-            when (productUiState) {
-                is ProductNetworkState.Success -> getProduct(productUiState.product.id)
-                else -> null
-            }
-            isRefreshing = false
-        }
+        refreshLogic(
+            offlineMode = offlineMode,
+            scope = scope,
+            productUiState = productUiState,
+            offlineProduct = offlineProduct,
+            getProduct = getProduct,
+            getOfflineProduct = getOfflineProduct,
+            isRefreshing = { isRefreshing = it },
+        )
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {},
+                title = { Text("Your Business Name") },
                 navigationIcon = {
                     NavigationIconButton(Icons.AutoMirrored.Default.ArrowBack, navigateUp)
                 },
@@ -117,120 +114,25 @@ fun ItemScreen(
             onRefresh = { onRefresh() },
             modifier = modifier.padding(padding)
         ) {
-            LazyColumn(
-                Modifier.fillMaxWidth()
-            ) {
-                when (productUiState) {
-                    is ProductNetworkState.Success -> {
-                        item {
-                            Log.d(
-                                ITEM_SCREEN_TAG,
-                                "\nItem network request success, loading item page..."
-                            )
-                            Log.d(ITEM_SCREEN_TAG, "Displaying Item: ${productUiState.product}")
-                            ImageGallery(productUiState.product)
-                            Row(modifier.fillMaxWidth()) {
-                                Text(
-                                    text = productUiState.product.title,
-                                    fontSize = 35.sp,
-                                    style = MaterialTheme.typography.displayMedium,
-                                    modifier = modifier.padding(vertical = 8.dp, horizontal = 16.dp)
-                                )
-                            }
-                            SellerDetails()
-                            PriceAndDelivery(productUiState.product)
-                            PurchaseOptions(productUiState.product, {}, {}, {})
-                            ItemDescription(productUiState.product)
-                            when (productListUiState) {
-                                is ProductListNetworkState.Success ->
-                                    SeeSimilar(
-                                        productUiState.product,
-                                        productListUiState.products,
-                                        onProductClick
-                                    )
-
-                                is ProductListNetworkState.Error ->
-                                    UiError(productListUiState.e.toString())
-                            }
-                        }
-                    }
-
-                    is ProductNetworkState.Error ->
-                        item {
-                            UiError(productUiState.e.toString())
-                        }
-                }
-            }
+            if (!offlineMode)
+                ProductDisplayOnline(
+                    offlineMode = false,
+                    productUiState = productUiState,
+                    productListUiState = productListUiState,
+                    onProductClick = onProductClick,
+                )
+            else
+                ProductDisplayOffline(
+                    offlineMode = true,
+                    product = offlineProduct,
+                    offlineProducts = offlineProducts,
+                    onProductClick = onProductClick,
+                )
         }
     }
 }
 
-@Composable
-fun ImageGallery(
-    product: Product,
-    modifier: Modifier = Modifier
-) {
-    val imageList = listOf(
-        ImageGalleryUiState(imageGalleryItem = ImageGalleryItem(image = product.image, title = "Image 1", selected = true)),
-        ImageGalleryUiState(imageGalleryItem = ImageGalleryItem(image = product.image, title = "Image 2")),
-        ImageGalleryUiState(imageGalleryItem = ImageGalleryItem(image = product.image, title = "Image 3"))
-    )
 
-    var selectedImage by remember { mutableStateOf(imageList[0]) }
-    val borderOn = Pair(10.dp, Color.Black)
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        // Main Image
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            modifier = modifier.fillMaxWidth()
-        ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context = LocalContext.current)
-                    .data(imageList[0].imageGalleryItem.image)
-                    .build(),
-                contentDescription = product.title,
-            )
-        }
-        // Extra Images
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = modifier.padding(horizontal = 8.dp)
-        ) {
-            items(items = imageList) {
-                val imageModifier =
-                    if (it.imageGalleryItem.selected)
-                        modifier
-                            .size(size = 100.dp)
-                            .border(width = 2.dp, color = Color.Black)
-                            .clickable {
-                                imageList.forEach { it.imageGalleryItem.selected = false }
-                                selectedImage = it
-                                selectedImage.imageGalleryItem.selected = true
-                            }
-                    else
-                        modifier
-                            .size(size = 100.dp)
-                            .clickable {
-                                selectedImage = it
-                                imageList.forEach { it.imageGalleryItem.selected = false }
-                            }
-                Box(imageModifier) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context = LocalContext.current)
-                            .data(product.image)
-                            .build(),
-                        contentDescription = product.title,
-                        modifier = modifier.padding(4.dp).align(Alignment.Center)
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun PriceAndDelivery(product: Product, modifier: Modifier = Modifier) {
@@ -345,18 +247,20 @@ fun SellerDetails(modifier: Modifier = Modifier) {
 
 @Composable
 fun SeeSimilar(
+    offlineMode: Boolean,
     product: Product,
-    productListUiState: List<Product>,
+    productList: List<Product>,
     onProductClick: (Product) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(Modifier.fillMaxWidth()) {
-                ImageGallerySimilarItems(productListUiState, product.category, onProductClick)
+        ImageGallerySimilarItems(offlineMode, productList, product.category, onProductClick)
     }
 }
 
 @Composable
 fun ImageGallerySimilarItems(
+    offlineMode: Boolean,
     products: List<Product>,
     category: String,
     onProductClick: (Product) -> Unit,
@@ -373,14 +277,20 @@ fun ImageGallerySimilarItems(
 
             items(items = filteredItems) { product ->
                 Log.d(ITEM_SCREEN_TAG, "ID: ${product.id}, title: ${product.title}")
-                AsyncImage(
-                    model = ImageRequest.Builder(context = LocalContext.current)
-                        .data(product.image)
-                        .build(),
-                    contentDescription = product.title,
-                    modifier = modifier.size(80.dp)
-                        .clickable { onProductClick(product) }
-                )
+                if (!offlineMode)
+                    AsyncImage(
+                        model = ImageRequest.Builder(context = LocalContext.current)
+                            .data(product.image)
+                            .build(),
+                        contentDescription = product.title,
+                        modifier = modifier.size(80.dp)
+                            .clickable { onProductClick(product) }
+                    )
+                else
+                    Image(
+                        painter = painterResource(R.drawable.img_url_broken),
+                        contentDescription = ""
+                    )
             }
         }
     }

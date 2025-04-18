@@ -1,12 +1,13 @@
 package com.dooques.myapplication.data.network
 
+import com.dooques.myapplication.model.AuthToken
 import com.dooques.myapplication.model.Product
+import com.dooques.myapplication.model.UserLoginAuth
 import com.dooques.myapplication.model.UserProfile
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -42,28 +43,33 @@ class FakeStoreApiProvider() {
 }
 
 interface FakeStoreApiService {
+    /* Products */
     @GET("products")
     suspend fun getProductList(): List<Product>
 
     @GET("products/{id}")
     suspend fun getProduct(@Path("id") id: Int): Product
 
+    @POST("products")
+    suspend fun postProductDetails(@Body product: Product)
+
+    /* Users */
     @GET("users")
     suspend fun getUserProfiles(): List<UserProfile>
 
     @GET("users/{id}")
     suspend fun getUserProfile(@Path("id") id: Int): UserProfile
 
-    @POST("products")
-    suspend fun postProductDetails(@Body product: Product)
-
     @POST("users")
-    suspend fun postUserProfile(@Body userProfile: UserProfile)
+    suspend fun createUserProfile(@Body userProfile: UserProfile)
+
+    @POST("/auth/login")
+    suspend fun loginUser(@Body userLoginAuth: UserLoginAuth): AuthToken
 }
 
 class FakeStoreDataSource(
     private val fakeStoreApiService: FakeStoreApiService,
-    private val refreshFlowInterval: Long = 60 * 1_000L
+    private val refreshFlowInterval: Long = 600 * 1_000L
 ) {
 
     val productList: Flow<List<Product>> = flow {
@@ -82,7 +88,9 @@ class FakeStoreDataSource(
 
     suspend fun getUserProfile(id: Int): UserProfile = fakeStoreApiService.getUserProfile(id)
 
-    suspend fun postUserProfile(userProfile: UserProfile) = fakeStoreApiService.postUserProfile(userProfile)
+    suspend fun createUserProfile(userProfile: UserProfile) = fakeStoreApiService.createUserProfile(userProfile)
+
+    suspend fun loginUser(userLoginAuth: UserLoginAuth) = fakeStoreApiService.loginUser(userLoginAuth)
 
 }
 

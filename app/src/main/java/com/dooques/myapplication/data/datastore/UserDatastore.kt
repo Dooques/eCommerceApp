@@ -36,7 +36,7 @@ interface UserDsRepository {
 }
 
 class UserDatastoreRepository(private val dataStore: DataStore<Preferences>): UserDsRepository {
-    val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_data")
+    private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_data")
 
     override suspend fun updateUser(user: UserProfile) {
         dataStore.edit { preference ->

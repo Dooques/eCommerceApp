@@ -16,4 +16,7 @@
     <string name="offers">Offers</string>
     <string name="your_offer_history">Your offer history</string>
     <string name="selling_since_2025">Selling since 2025</string>
+    <string name="sign_in">Sign in</string>
+    <string name="image_failed_to_load">Image failed to load…</string>
+    <string name="settings">Settings</string>
 </resources>
